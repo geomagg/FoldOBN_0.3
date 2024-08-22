@@ -1,0 +1,63 @@
+#!/bin/bash
+# GMT script to plot CMPS computed from Multiplicidade cmps_up, cmps_mirror and cmps_ps
+#
+#rm foldgmt.nc
+
+#### Reading the parameters for this current project
+#  line 1 = angle
+#  line 2 =  BINX
+#  line 3 = BINY
+#  line 4 = MAXFOLD
+
+declare -A gpar
+index=0
+while read line ; do
+    gpar[$index]="$line"
+    index=$(($index+1))
+done < gplotpar
+echo ${gpar[0]} 
+angle="${gpar[0]}" 
+#echo $angle
+
+
+# Rotation
+
+awk -v ang=$angle '{print (-$2*sin(ang) + $1*cos(ang)) , $2*cos(ang) + $1*sin(ang)}' cmps_up>cmps
+awk -v ang=$angle '{if (NR>1) print (-$2*sin(ang) + $1*cos(ang)) , $2*cos(ang) + $1*sin(ang)}' shots.txt>shots
+awk -v ang=$angle '{print (-$2*sin(ang) + $1*cos(ang)) , $2*cos(ang) + $1*sin(ang)}' nodes.txt>nodes
+awk -v ang=$angle '{if (NR>1) print (-$2*sin(ang) + $1*cos(ang)) , $2*cos(ang) + $1*sin(ang)}' pol3.txt>pol3
+awk '!seen[$0]++ ' cmps > cmps_clean
+
+#awk '{ if (NR>1) print $1, $2}' pol3.txt >pol3
+#awk '{ print $1, $2}' nodes.txt >nodes
+#awk '{ if (NR>1) print $1, $2}' pol2.txt >pol2
+#awk '{print $1,$2}' cmps_up>cmps
+output=foldgmt.ps
+
+grid="-B5000/5000WS"
+dim="-JX5i"
+regiao=`gmt gmtinfo pol3 -I1 `
+echo $regiao
+
+gmt gmtset COLOR_NAN gray
+gmt makecpt -Crainbow -T0/${gpar[3]}/4 > fold.cpt
+gmt xyz2grd cmps -I${gpar[1]}/${gpar[2]} -An -Gfoldgmt.nc $regiao
+
+gmt grdimage foldgmt.nc $regiao $dim $grid -Cfold.cpt -P -X2 -Y3. -K  >$output
+#gmt psxy $regiao $dim $grid -Sc.08 -Gred -K -P nodes -O >> $output
+#gmt psxy $regiao $dim $grid -Sc.02 -Gblue -K -P cmps_clean -O >> $output
+gmt psxy $regiao $dim $grid -Sc.02 -Gblue -K -P shots -O >> $output
+
+gmt psxy $regiao $dim $grid -W2,black  -K -P pol3 -O >> $output
+#gmt psxy $regiao $dim $grid -W2,blue -K -P pol3a -O >> $output
+
+gmt psscale -Dx1.2i/5.5i/5i/0.25ih -B100:GMT-Pwave-fold-up-coming-field: -Cfold.cpt -O -K -P -X3 -Y2. >> $output
+rm cmps_clean
+rm cmps
+rm pol3
+#rm cmps
+ps2pdf $output
+rm $output
+rm foldgmt.nc
+rm fold.cpt
+okular foldgmt.pdf&
