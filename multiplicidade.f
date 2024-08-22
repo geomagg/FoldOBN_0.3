@@ -18,6 +18,7 @@ c-------------------------------------------------------------------------------
           Open (unit=12,file='cmps_mirror')
           Open (unit=13,file='cmps1_ps')
 c------------------------------------------------------------------------
+          read(*,*)opt
 
           nnodes=0
           nshots=0
@@ -64,10 +65,16 @@ c
 c
               If (offset .le. apert)then
                num_shots=num_shots+1             
-                 write(11,*)cmpu_x,cmpu_y,offset,azim
-                 write(12,*)cmpd_x,cmpd_y,offset,azim
-                 write(13,*)cmps1_x,cmps1_y,offset,azim
 
+                 if (opt == 1) then
+                 write(11,*)cmpu_x,cmpu_y,offset,azim
+                 end if
+                 if (opt == 2) then 
+                 write(12,*)cmpd_x,cmpd_y,offset,azim
+                 end if
+                 if (opt == 3) then 
+                 write(13,*)cmps1_x,cmps1_y,offset,azim
+                 end if
               Endif
 
           Enddo
